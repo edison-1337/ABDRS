@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Barangay Document Request System - Backend Architecture</title>
+  <style>
+    :root { --paper:#f7f3ec; --ink:#2d3142; --muted:#777b83; --line:#c9c3b9; --coral:#d86f5f; --blue:#5d7ea8; --mint:#dce9df; --wash:#efe9df; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font-family:Inter, ui-sans-serif, system-ui, sans-serif; }
+    main { max-width:1320px; margin:0 auto; padding:44px 32px 52px; }
+    .kicker { color:var(--coral); font:700 11px/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing:.16em; text-transform:uppercase; }
+    h1 { margin:10px 0 8px; font-size:34px; line-height:1.08; letter-spacing:-.04em; }
+    .lede { max-width:840px; margin:0 0 26px; color:var(--muted); font-size:15px; line-height:1.55; }
+    .frame { overflow:hidden; border:1px solid var(--line); border-radius:14px; background:#fbf9f5; box-shadow:0 12px 30px rgba(45,49,66,.06); }
+    svg { display:block; width:100%; height:auto; }
+    .notes { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:18px; }
+    .note { padding:16px; border:1px solid var(--line); border-radius:10px; background:#fbf9f5; }
+    .note h2 { margin:0 0 7px; font-size:14px; }
+    .note p { margin:0; color:var(--muted); font-size:12px; line-height:1.55; }
+    .foot { margin-top:22px; color:var(--muted); font:11px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    @media (max-width:800px) { main { padding:28px 16px 36px; } h1 { font-size:28px; } .notes { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="kicker">Barangay Document Request System / Architecture 02</div>
+    <h1>Backend architecture</h1>
+    <p class="lede">Express route handlers are the server boundary and own no rules. The request domain and the SMS domain live in <code>src/lib</code> and decide everything; MySQL is the only system of record, and TextBee is reached exclusively by a background outbox worker so gateway throughput can never fail a citizen request.</p>
+    <div class="frame">
+      <svg viewBox="0 0 1280 720" role="img" aria-labelledby="backend-title backend-desc">
+        <title id="backend-title">Barangay Document Request System backend architecture</title>
+        <desc id="backend-desc">A backend flow from Express route handlers through authentication, the request domain and the SMS domain, into MySQL and the TextBee gateway, with a signed delivery-receipt loop returning to the webhook route.</desc>
+        <defs>
+          <marker id="backend-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5d7ea8"/></marker>
+          <marker id="backend-arrow-dash" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#d86f5f"/></marker>
+        </defs>
+        <rect x="0" y="0" width="1280" height="720" fill="#fbf9f5"/>
+
+        <rect x="28" y="70" width="268" height="468" rx="10" fill="rgba(45,49,66,.02)" stroke="rgba(45,49,66,.14)"/>
+        <rect x="312" y="70" width="520" height="468" rx="10" fill="rgba(45,49,66,.02)" stroke="rgba(45,49,66,.14)"/>
+        <rect x="848" y="70" width="404" height="468" rx="10" fill="rgba(45,49,66,.02)" stroke="rgba(45,49,66,.14)"/>
+
+        <rect x="44" y="74" width="112" height="14" rx="2" fill="#fbf9f5"/><text x="100" y="84" text-anchor="middle" font-size="8" letter-spacing=".14em" fill="#777b83" font-family="ui-monospace,monospace">REQUEST EDGE</text>
+        <rect x="328" y="74" width="128" height="14" rx="2" fill="#fbf9f5"/><text x="392" y="84" text-anchor="middle" font-size="8" letter-spacing=".14em" fill="#777b83" font-family="ui-monospace,monospace">DOMAIN LIBRARY</text>
+        <rect x="864" y="74" width="176" height="14" rx="2" fill="#fbf9f5"/><text x="952" y="84" text-anchor="middle" font-size="8" letter-spacing=".14em" fill="#777b83" font-family="ui-monospace,monospace">DATA &amp; SMS GATEWAY</text>
+
+        <!-- edges -->
+        <path d="M 164 196 H 180" fill="none" stroke="#5d7ea8" stroke-width="1.4" marker-end="url(#backend-arrow)"/>
+        <path d="M 284 196 H 328" fill="none" stroke="#5d7ea8" stroke-width="1.4" marker-end="url(#backend-arrow)"/>
+        <path d="M 436 196 H 448" fill="none" stroke="#5d7ea8" stroke-width="1.4" marker-end="url(#backend-arrow)"/>
+        <path d="M 382 229 V 319" fill="none" stroke="#5d7ea8" stroke-width="1.4" marker-end="url(#backend-arrow)"/>
+        <path d="M 108 319 V 250 H 622 V 229" fill="none" stroke="#5d7ea8" stroke-width="1.3" marker-end="url(#backend-arrow)"/>
+        <path d="M 436 352 H 448" fill="none" stroke="#5d7ea8" stroke-width="1.4" marker-end="url(#backend-arrow)"/>
+        <path d="M 556 352 H 568" fill="none" stroke="#5d7ea8" stroke-width="1.4" marker-end="url(#backend-arrow)"/>
+        <path d="M 742 385 V 406 H 910 V 391" fill="none" stroke="#5d7ea8" stroke-width="1.2" marker-end="url(#backend-arrow)"/>
+        <path d="M 502 385 V 418 H 990 V 391" fill="none" stroke="#5d7ea8" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#backend-arrow)"/>
+        <path d="M 676 352 H 812 V 400 H 1150 V 391" fill="none" stroke="#d86f5f" stroke-width="1.4" marker-end="url(#backend-arrow-dash)"/>
+        <path d="M 1240 352 H 1258 V 130 H 36 V 352 H 52" fill="none" stroke="#d86f5f" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#backend-arrow-dash)"/>
+
+        <!-- request edge -->
+        <g>
+          <rect x="52" y="163" width="112" height="66" rx="8" fill="#efe9df" stroke="#c9c3b9"/><text x="108" y="187" text-anchor="middle" font-size="13" font-weight="700">API routes</text><text x="108" y="208" text-anchor="middle" font-size="9" fill="#777b83">/api/requests</text>
+        </g>
+        <g>
+          <rect x="180" y="163" width="104" height="66" rx="8" fill="#f3d8d2" stroke="#d86f5f" stroke-width="1.4"/><text x="232" y="187" text-anchor="middle" font-size="12" font-weight="700">Auth</text><text x="232" y="208" text-anchor="middle" font-size="9" fill="#777b83">session + role</text>
+        </g>
+        <g>
+          <rect x="52" y="319" width="112" height="66" rx="8" fill="#efe9df" stroke="#c9c3b9"/><text x="108" y="343" text-anchor="middle" font-size="13" font-weight="700">Webhook</text><text x="108" y="364" text-anchor="middle" font-size="9" fill="#777b83">/api/webhooks</text>
+        </g>
+        <g>
+          <rect x="180" y="319" width="104" height="66" rx="8" fill="#efe9df" stroke="#c9c3b9"/><text x="232" y="343" text-anchor="middle" font-size="12" font-weight="700">Rate limit</text><text x="232" y="364" text-anchor="middle" font-size="9" fill="#777b83">public intake</text>
+        </g>
+
+        <!-- domain library -->
+        <g>
+          <rect x="328" y="163" width="108" height="66" rx="8" fill="#dce9df" stroke="#91ae99"/><text x="382" y="187" text-anchor="middle" font-size="13" font-weight="700">Requests</text><text x="382" y="208" text-anchor="middle" font-size="9" fill="#777b83">workflow · rules</text>
+        </g>
+        <g>
+          <rect x="448" y="163" width="108" height="66" rx="8" fill="#dce9df" stroke="#91ae99"/><text x="502" y="187" text-anchor="middle" font-size="13" font-weight="700">Validation</text><text x="502" y="208" text-anchor="middle" font-size="9" fill="#777b83">critical/warn</text>
+        </g>
+        <g>
+          <rect x="568" y="163" width="108" height="66" rx="8" fill="#dce9df" stroke="#91ae99"/><text x="622" y="187" text-anchor="middle" font-size="12" font-weight="700">Signature</text><text x="622" y="208" text-anchor="middle" font-size="9" fill="#777b83">HMAC · dedupe</text>
+        </g>
+        <g>
+          <rect x="688" y="163" width="108" height="66" rx="8" fill="#dce9df" stroke="#91ae99"/><text x="742" y="187" text-anchor="middle" font-size="12" font-weight="700">Control no.</text><text x="742" y="208" text-anchor="middle" font-size="9" fill="#777b83">generator</text>
+        </g>
+        <g>
+          <rect x="328" y="319" width="108" height="66" rx="8" fill="#dce9df" stroke="#91ae99"/><text x="382" y="343" text-anchor="middle" font-size="13" font-weight="700">Templates</text><text x="382" y="364" text-anchor="middle" font-size="9" fill="#777b83">event → text</text>
+        </g>
+        <g>
+          <rect x="448" y="319" width="108" height="66" rx="8" fill="#dce9df" stroke="#91ae99"/><text x="502" y="343" text-anchor="middle" font-size="13" font-weight="700">Outbox</text><text x="502" y="364" text-anchor="middle" font-size="9" fill="#777b83">throttle · retry</text>
+        </g>
+        <g>
+          <rect x="568" y="319" width="108" height="66" rx="8" fill="#f3d8d2" stroke="#d86f5f" stroke-width="1.4"/><text x="622" y="343" text-anchor="middle" font-size="12" font-weight="700">Provider</text><text x="622" y="364" text-anchor="middle" font-size="9" fill="#777b83">textbee|mock</text>
+        </g>
+        <g>
+          <rect x="688" y="319" width="108" height="66" rx="8" fill="#dce9df" stroke="#91ae99"/><text x="742" y="343" text-anchor="middle" font-size="12" font-weight="700">Requirements</text><text x="742" y="364" text-anchor="middle" font-size="9" fill="#777b83">checklist</text>
+        </g>
+
+        <!-- data + gateway -->
+        <g>
+          <rect x="864" y="163" width="180" height="66" rx="8" fill="#efe9df" stroke="#c9c3b9"/><text x="954" y="187" text-anchor="middle" font-size="13" font-weight="700">MySQL 8</text><text x="954" y="208" text-anchor="middle" font-size="9" fill="#777b83">requests · residents · audit</text>
+        </g>
+        <g>
+          <rect x="1060" y="163" width="180" height="66" rx="8" fill="#efe9df" stroke="#c9c3b9"/><text x="1150" y="187" text-anchor="middle" font-size="13" font-weight="700">Migrations</text><text x="1150" y="208" text-anchor="middle" font-size="9" fill="#777b83">ordered + rollback</text>
+        </g>
+        <g>
+          <rect x="864" y="319" width="180" height="66" rx="8" fill="#efe9df" stroke="#c9c3b9"/><text x="954" y="343" text-anchor="middle" font-size="13" font-weight="700">sms_outbox</text><text x="954" y="364" text-anchor="middle" font-size="9" fill="#777b83">queue · delivery state</text>
+        </g>
+        <g>
+          <rect x="1060" y="319" width="180" height="66" rx="8" fill="#f3d8d2" stroke="#d86f5f" stroke-width="1.4"/><text x="1150" y="343" text-anchor="middle" font-size="13" font-weight="700">TextBee API</text><text x="1150" y="364" text-anchor="middle" font-size="9" fill="#777b83">x-api-key · 10-15 msg/min</text>
+        </g>
+
+        <g>
+          <rect x="864" y="455" width="376" height="72" rx="8" fill="#fbf9f5" stroke="#c9c3b9"/>
+          <text x="1052" y="479" text-anchor="middle" font-size="13" font-weight="700">Request invariants</text>
+          <text x="1052" y="498" text-anchor="middle" font-size="9" fill="#777b83">only approved → released · released is terminal · control no. immutable</text>
+          <text x="1052" y="514" text-anchor="middle" font-size="9" fill="#777b83">rejection needs a reason · own requests only · active types only</text>
+        </g>
+
+        <text x="676" y="343" font-size="9" fill="#d86f5f" font-family="ui-monospace,monospace" text-anchor="end" dx="-4">never inline</text>
+        <text x="1000" y="122" font-size="9" fill="#d86f5f" font-family="ui-monospace,monospace">signed delivery receipt</text>
+        <text x="560" y="440" font-size="9" fill="#777b83" font-family="ui-monospace,monospace">queue row written in the same transaction</text>
+
+        <line x1="44" y1="574" x2="1236" y2="574" stroke="#c9c3b9"/>
+        <text x="44" y="604" font-size="10" fill="#777b83" font-family="ui-monospace,monospace">SOLID = command or write flow</text>
+        <text x="330" y="604" font-size="10" fill="#777b83" font-family="ui-monospace,monospace">DASHED = async queue or callback</text>
+        <rect x="776" y="592" width="12" height="12" rx="2" fill="#dce9df" stroke="#91ae99"/><text x="796" y="602" font-size="10" fill="#777b83">domain service</text>
+        <rect x="898" y="592" width="12" height="12" rx="2" fill="#f3d8d2" stroke="#d86f5f"/><text x="918" y="602" font-size="10" fill="#777b83">security focal point</text>
+      </svg>
+    </div>
+    <div class="notes">
+      <article class="note"><h2>Route boundary</h2><p>Route handlers parse input, enforce auth, call the library, and return JSON. They never decide a legal transition, a severity, or a message body.</p></article>
+      <article class="note"><h2>Outbox, not inline send</h2><p>A status change and its <code>sms_outbox</code> row commit together. The worker drains the queue under a throttle, so a busy gateway or a 429 can never roll back a citizen's approval.</p></article>
+      <article class="note"><h2>Gateway authenticity</h2><p>Delivery receipts are HMAC-SHA256 verified over the exact raw body and de-duplicated on <code>idempotencyKey</code> before they may change a message status.</p></article>
+    </div>
+    <div class="foot">Evidence: src/routes, src/middleware, src/lib/requests, src/lib/sms, database/migrations, AGENTS.md request rules, TextBee API reference.</div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,36 @@
+{
+  "name": "abdrs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A Barangay Document Request System with SMS API notifications.",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "migrate": "node src/lib/db/migrate.js",
+    "migrate:status": "node src/lib/db/migrate.js --status",
+    "seed": "node src/lib/db/seed.js",
+    "outbox:work": "node src/lib/sms/outbox-worker.js",
+    "lint": "eslint .",
+    "test": "node --test",
+    "verify": "npm run lint && npm test"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "multer": "^2.0.2",
+    "mysql2": "^3.15.3"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.1"
+  }
+}
