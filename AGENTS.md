@@ -202,8 +202,23 @@ git diff --stat
 
 Before `git push`, show the owner the branch, intended remote and ref, changed-file summary, and verification results.
 
+### Commit approval
+
+**Never commit without asking first.** Running `git commit` (and staging with `git add`) requires explicit approval from the developer for that exact commit. Approval for one commit is never approval for the next.
+
+Before any commit, report and then wait:
+
+- the current branch;
+- the exact files that would be included;
+- the verification results (`npm run lint`, `npm test`).
+
+Ask, for example, "May I commit these files on `staging`?", then stop. Do not stage or commit until the developer answers yes. If approval is not given, leave the changes in the working tree and do not commit.
+
+This applies to **every file in the repository**, including documentation and every `.md` file. The same rule covers `git stash`, `git tag`, and any other command that writes Git state.
+
 ## Git and collaboration safety
 
+- Never run `git commit` before asking first and receiving explicit approval for that exact commit.
 - Work on the current branch unless the developer explicitly asks to create or switch branches.
 - Never run `git merge`, `git rebase`, `git cherry-pick`, `git reset --hard`, `git checkout --`, or a broad deletion command without explicit approval for that exact operation.
 - Never hide, revert, reset, overwrite, or delete existing work without explicit permission. Do not use destructive Git commands as a shortcut.

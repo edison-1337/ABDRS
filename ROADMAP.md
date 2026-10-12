@@ -2,6 +2,8 @@
 
 Phased build order for the Barangay Document Request System. Each phase ends with something runnable and something testable. Do not start a phase before the previous one is verified.
 
+**Commit approval.** Never commit before asking first. Staging or committing any file — including this roadmap and every other `.md` file — requires explicit developer approval for that exact commit, and approval for one commit never authorizes the next. The authoritative policy lives in `AGENTS.md` and `.agents/skills/00-abdrs/SKILL.md`.
+
 ---
 
 ## Phase 0 — Foundations

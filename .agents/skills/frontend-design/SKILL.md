@@ -42,6 +42,12 @@ The single source of truth for visual decisions is **`DESIGN.md`** in this direc
 - Reuse existing components before adding primitives; keep changes consistent with surrounding code.
 - Preserve accessible controls, labels, keyboard behavior, loading/empty/error states.
 
+## Commit approval
+
+Never commit before asking first. Staging or committing any file — including this skill's `.md` files and any asset under `public/` — requires explicit developer approval for that exact commit, and approval for one commit never authorizes the next.
+
+Before proposing a commit, report the current branch, the exact files, and the verification results (`npm run lint`, `npm test`), then ask and wait. If approval is not given, leave the changes uncommitted. This inherits the policy in `.agents/skills/00-abdrs/SKILL.md` and `AGENTS.md`; those remain authoritative.
+
 ## Notes
 
 - `public/css/base/` currently contains only `.gitkeep`; until Phase 4/5 CSS lands, `DESIGN.md` is the provisional source of truth and **must stay in sync** with any CSS that implements it.

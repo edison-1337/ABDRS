@@ -18,8 +18,9 @@ You MUST:
 3. Follow the project's existing conventions — route shape, library layout, JSDoc typedefs, SQL style, and visual language — before introducing abstractions or dependencies.
 4. Run the full verification gate (`npm run lint` and `npm test`) after implementation and before every push.
 5. Report every command that was run, its result, and any remaining limitation.
-6. Ask the developer before any merge, rebase, cherry-pick, branch switch, conflict resolution that could discard work, or automatic incorporation of commits from another branch. Never perform these actions autonomously.
-7. Never hide, revert, reset, overwrite, or delete existing work without explicit permission. Do not use destructive Git commands as a shortcut.
+6. Ask the developer before every commit and receive explicit approval for that exact commit. Never stage or commit a file without a yes. This applies to every file in the repository, including documentation and every `.md` file.
+7. Ask the developer before any merge, rebase, cherry-pick, branch switch, conflict resolution that could discard work, or automatic incorporation of commits from another branch. Never perform these actions autonomously.
+8. Never hide, revert, reset, overwrite, or delete existing work without explicit permission. Do not use destructive Git commands as a shortcut.
 
 If a request conflicts with these rules, stop before the conflicting action and ask the developer for direction.
 
@@ -199,8 +200,21 @@ git diff --stat
 
 Before `git push`, show the developer the branch, intended remote and ref, changed-file summary, and verification results. Push only the current branch and only when the developer's request authorizes it. Never merge another branch automatically.
 
+### Commit approval
+
+Never create a commit before asking first. Staging (`git add`) or committing (`git commit`) requires explicit developer approval for that exact commit, and approval for one commit never authorizes the next.
+
+For every proposed commit, report and then wait:
+
+- the current branch;
+- the exact files that would be committed;
+- the verification results (`npm run lint`, `npm test`).
+
+Ask, for example, "May I commit these files on `staging`?", then stop. Do not stage or commit until the developer answers yes. If approval is not given, leave the changes in the working tree. This applies to every file in the repository, including documentation and every `.md` file, and it covers `git stash`, `git tag`, and any other command that writes Git state.
+
 ## Git and collaboration safety
 
+- Never commit or stage before asking first and receiving explicit approval for that exact commit.
 - Work on the current branch unless the developer explicitly asks to create or switch branches.
 - Never run `git merge`, `git rebase`, `git cherry-pick`, `git reset --hard`, `git checkout --`, or a broad deletion command without explicit developer approval for that exact operation.
 - If another branch contains a likely fix, tell the developer which branch or commit you found and ask whether to merge, cherry-pick, or reimplement it manually.

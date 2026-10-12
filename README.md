@@ -223,6 +223,8 @@ Read [`AGENTS.md`](AGENTS.md) and the canonical repository skill at [`.agents/sk
 
 Keep changes focused, update tests when behavior changes, and preserve existing uncommitted work. Never automatically merge, rebase, or cherry-pick. Before pushing, report the branch, changed files, verification results, and any remaining limitation.
 
+**Commit approval.** Never commit before asking first. Staging or committing any file — including documentation and every `.md` file — requires explicit developer approval for that exact commit, and approval for one commit never authorizes the next. Report the branch, the exact files, and the verification results, then ask and wait.
+
 ## Further documentation
 
 - [`AGENTS.md`](AGENTS.md) — domain rules and repository instruction entrypoint

@@ -2,6 +2,8 @@
 
 **Status:** provisional contract (until Phase 4/5 CSS lands). Must stay in sync with `public/css/base/`, `public/css/components/`, `public/css/layouts/`.
 
+**Commit approval:** Never commit this file (or any other `.md` file, CSS, or JS in this repository) before asking the developer first. Report the branch, the exact files, and the verification results (`npm run lint`, `npm test`), ask, and wait for a yes. Approval for one commit never authorizes the next. The authoritative policy lives in `AGENTS.md` and `.agents/skills/00-abdrs/SKILL.md`.
+
 ---
 
 ## 1. Visual Theme & Atmosphere
