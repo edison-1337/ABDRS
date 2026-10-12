@@ -20,6 +20,7 @@
     "verify": "npm run lint && npm test"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.3",
     "bcryptjs": "^3.0.2",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
@@ -28,7 +29,7 @@
     "express-rate-limit": "^8.2.1",
     "helmet": "^8.1.0",
     "multer": "^2.0.2",
-    "mysql2": "^3.15.3"
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "eslint": "^9.39.1"

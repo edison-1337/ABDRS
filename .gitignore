@@ -6,10 +6,10 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # environment — NEVER commit real credentials.
-# .env.example is the only env file that is tracked.
+# No env-shaped file is tracked. Real values live only in local, gitignored env files.
 .env
 .env.*
-!.env.local
+.env.local
 
 # runtime
 /logs

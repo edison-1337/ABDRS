@@ -16,6 +16,9 @@
  *   - `TEXTBEE_API_KEY` is required only when `SMS_PROVIDER=textbee`. The mock
  *     provider performs no network call and needs no credential, which is why
  *     local development works with an empty key.
+ *   - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are required in
+ *     production. The service key is a full-access secret and must stay
+ *     server-side.
  */
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
@@ -48,6 +51,13 @@ export class ConfigError extends Error {
  */
 
 /**
+ * @typedef {object} SupabaseConfig
+ * @property {string} url Project base URL, e.g. `https://<ref>.supabase.co`.
+ * @property {string} anonKey Public-safe key; requires Row Level Security.
+ * @property {string} serviceRoleKey Full-access server secret. Never log this value.
+ */
+
+/**
  * @typedef {object} Config
  * @property {'development'|'test'|'production'} nodeEnv
  * @property {boolean} isProduction
@@ -57,6 +67,8 @@ export class ConfigError extends Error {
  * @property {string} sessionSecret Never log this value.
  * @property {boolean} sessionSecretIsEphemeral True when generated for this process.
  * @property {SmsConfig} sms
+ * @property {SupabaseConfig} supabase
+ * @property {string} databaseUrl Postgres connection string for DDL only. Empty unless provided.
  */
 
 /**
@@ -136,6 +148,32 @@ export function parseConfig(env = {}) {
   }
   const fromLabel = (env.SMS_FROM_LABEL ?? '').trim() || 'Barangay Office';
 
+  const supabaseUrl = (env.SUPABASE_URL ?? '').trim();
+  if (supabaseUrl !== '') {
+    assertHttpUrl(supabaseUrl, 'SUPABASE_URL');
+  } else if (isProduction) {
+    throw new ConfigError('SUPABASE_URL is required when NODE_ENV=production.');
+  }
+
+  const supabaseAnonKey = (env.SUPABASE_ANON_KEY ?? '').trim();
+  const supabaseServiceRoleKey = (env.SUPABASE_SERVICE_ROLE_KEY ?? '').trim();
+  if (supabaseServiceRoleKey === '' && isProduction) {
+    throw new ConfigError('SUPABASE_SERVICE_ROLE_KEY is required when NODE_ENV=production.');
+  }
+
+  const databaseUrl = (env.DATABASE_URL ?? '').trim();
+  if (databaseUrl !== '') {
+    let parsed;
+    try {
+      parsed = new URL(databaseUrl);
+    } catch {
+      throw new ConfigError('DATABASE_URL must be a valid postgres connection string.');
+    }
+    if (parsed.protocol !== 'postgres:' && parsed.protocol !== 'postgresql:') {
+      throw new ConfigError(`DATABASE_URL must use the postgres:// protocol (received "${parsed.protocol}//").`);
+    }
+  }
+
   return Object.freeze({
     nodeEnv,
     isProduction,
@@ -149,16 +187,22 @@ export function parseConfig(env = {}) {
       textbeeApiKey,
       fromLabel,
     }),
+    supabase: Object.freeze({
+      url: supabaseUrl,
+      anonKey: supabaseAnonKey,
+      serviceRoleKey: supabaseServiceRoleKey,
+    }),
+    databaseUrl,
   });
 }
 
 /**
  * Loads `.env` and then `.env.local` into `process.env`.
  *
- * `.env` holds real local secrets and is gitignored. `.env.local` is the
- * tracked template and supplies non-secret defaults. dotenv never overwrites a
- * key that is already set, so the real process environment wins over `.env`,
- * which in turn wins over the template.
+ * Both files are local and gitignored; `.env.local` is where this project
+ * keeps its real values. dotenv never overwrites a key that is already set, so
+ * the real process environment wins over `.env`, which in turn wins over
+ * `.env.local`.
  *
  * @param {string} [root]
  */

@@ -26,11 +26,11 @@
   <main>
     <div class="kicker">Barangay Document Request System / Architecture 02</div>
     <h1>Backend architecture</h1>
-    <p class="lede">Express route handlers are the server boundary and own no rules. The request domain and the SMS domain live in <code>src/lib</code> and decide everything; MySQL is the only system of record, and TextBee is reached exclusively by a background outbox worker so gateway throughput can never fail a citizen request.</p>
+    <p class="lede">Express route handlers are the server boundary and own no rules. The request domain and the SMS domain live in <code>src/lib</code> and decide everything; Supabase PostgreSQL is the only system of record, and TextBee is reached exclusively by a background outbox worker so gateway throughput can never fail a citizen request.</p>
     <div class="frame">
       <svg viewBox="0 0 1280 720" role="img" aria-labelledby="backend-title backend-desc">
         <title id="backend-title">Barangay Document Request System backend architecture</title>
-        <desc id="backend-desc">A backend flow from Express route handlers through authentication, the request domain and the SMS domain, into MySQL and the TextBee gateway, with a signed delivery-receipt loop returning to the webhook route.</desc>
+        <desc id="backend-desc">A backend flow from Express route handlers through authentication, the request domain and the SMS domain, into Supabase PostgreSQL and the TextBee gateway, with a signed delivery-receipt loop returning to the webhook route.</desc>
         <defs>
           <marker id="backend-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5d7ea8"/></marker>
           <marker id="backend-arrow-dash" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#d86f5f"/></marker>
@@ -100,7 +100,7 @@
 
         <!-- data + gateway -->
         <g>
-          <rect x="864" y="163" width="180" height="66" rx="8" fill="#efe9df" stroke="#c9c3b9"/><text x="954" y="187" text-anchor="middle" font-size="13" font-weight="700">MySQL 8</text><text x="954" y="208" text-anchor="middle" font-size="9" fill="#777b83">requests · residents · audit</text>
+          <rect x="864" y="163" width="190" height="66" rx="8" fill="#efe9df" stroke="#c9c3b9"/><text x="959" y="187" text-anchor="middle" font-size="11" font-weight="700">Supabase PostgreSQL</text><text x="959" y="208" text-anchor="middle" font-size="9" fill="#777b83">requests · residents · audit</text>
         </g>
         <g>
           <rect x="1060" y="163" width="180" height="66" rx="8" fill="#efe9df" stroke="#c9c3b9"/><text x="1150" y="187" text-anchor="middle" font-size="13" font-weight="700">Migrations</text><text x="1150" y="208" text-anchor="middle" font-size="9" fill="#777b83">ordered + rollback</text>

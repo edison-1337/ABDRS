@@ -31,7 +31,7 @@ Concretely:
 | Queueing, throttling, retry | `src/lib/sms/outbox.js` |
 | Gateway status mapping | `src/lib/sms/delivery.js` |
 | Webhook authenticity | `src/lib/sms/signature.js` |
-| SQL statements | `src/lib/repositories/` |
+| Supabase data access | `src/lib/repositories/` |
 | Phone normalization | `src/lib/utils/phone.js` |
 
 A route handler may parse input, enforce auth, call the library, and return JSON. That is its entire job.
@@ -146,8 +146,8 @@ Never downgrade a `critical` finding to a `warning` to make a transition succeed
 These are not preferences. A change that breaks one is a defect.
 
 1. `TEXTBEE_API_KEY` and `SESSION_SECRET` are server-side only. Never place them under `public/`, inline them into a page, return them in a response, log them, or commit them.
-2. `.env` is gitignored. `.env.example` holds placeholders only.
-3. All SQL uses `mysql2` placeholders. Never concatenate a value into a statement.
+2. `.env.local` is gitignored, untracked, and excluded from commit and push. No env-shaped file is committed; real credentials live only in the local, untracked `.env.local`.
+3. Data access uses the `supabase-js` query builder. Never build or concatenate raw SQL strings; never issue an unparameterized statement.
 4. Every request read and write is scoped to the authenticated resident's own id, or explicitly authorized as staff.
 5. Logs carry ids, statuses, and correlation ids. Never a full name, address, contact number, document body, or OTP.
 6. Resident uploads are written outside the served asset tree and are never committed.
@@ -155,7 +155,7 @@ These are not preferences. A change that breaks one is a defect.
 
 ## Database conventions
 
-Migrations in `database/migrations/` are applied in filename order and are never edited after they have been applied. To change a schema, add a new migration and a matching down-migration in `database/rollback/`.
+Migrations in `database/migrations/` are applied in filename order and are never edited after they have been applied. To change a schema, add a new migration and a matching down-migration in `database/rollback/`. Migrations execute with `pg` against `DATABASE_URL` (Supabase).
 
 Keep schema, JSDoc typedefs in `src/lib/types/`, repository queries, and tests synchronized.
 

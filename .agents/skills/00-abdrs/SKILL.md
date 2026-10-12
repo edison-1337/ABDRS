@@ -1,6 +1,6 @@
 ---
 name: 00-abdrs
-description: Repository-wide operating context and strict development workflow for the Barangay Document Request System (Express, MySQL, TextBee SMS API). Read this before any other skill or repository change.
+description: Repository-wide operating context and strict development workflow for the Barangay Document Request System (Express, Supabase PostgreSQL, TextBee SMS API). Read this before any other skill or repository change.
 metadata:
   short-description: Canonical ABDRS repository context and safe workflow
 ---
@@ -37,11 +37,11 @@ The deployment unit is **one barangay**. There is deliberately no multi-tenant `
 - Runtime: Node.js `>= 20.11`, ES modules, `"type": "module"`.
 - Server: Express `5`. Entry point `src/server.js`.
 - Frontend: plain HTML5, CSS3, and vanilla JavaScript ES modules served from `public/`. No framework, no bundler, no build step for browser assets.
-- Database: MySQL 8 via `mysql2/promise`. Migrations live in `database/migrations/`.
+- Database: Supabase PostgreSQL. Row access uses `@supabase/supabase-js` server-side; DDL migrations in `database/migrations/` run with `pg` over `DATABASE_URL`.
 - SMS: TextBee API. Base URL `https://api.textbee.dev/api/v1`, authenticated with the `x-api-key` header.
 - Tests: `node:test`, files colocated as `*.test.js` next to the module they cover.
 - Tooling: ESLint 9.
-- Deployment target: a single long-running Node process with a MySQL database, plus an outbox worker process.
+- Deployment target: a single long-running Node process backed by Supabase PostgreSQL, plus an outbox worker process.
 
 Do not add a frontend framework, a bundler, a TypeScript migration, or an ORM as part of an unrelated feature. Any such change requires an explicit request and its own verification.
 
@@ -66,7 +66,7 @@ src/
   lib/api/                       errors, respond, rate-limit, validate
   lib/auth/                      password, session, otp, roles
   lib/db/                        pool, transactions, migrate, seed
-  lib/repositories/              Parameterized SQL
+  lib/repositories/              Supabase-js data access
   lib/types/                     JSDoc typedefs
   lib/utils/                     date-utils, phone, reference, id
 database/migrations/             Ordered SQL migrations
@@ -82,7 +82,7 @@ Do not duplicate a request or SMS rule in a route handler, a middleware file, or
 
 ## Data and authentication invariants
 
-The database connects with a least-privilege application user. `DB_USER` must not be `root` in any non-local environment.
+The database is reached through Supabase. The `service_role` key is a full-access server secret and must stay server-side. Row Level Security is enabled as defense-in-depth, but ownership (Request Rule 5) is always enforced in `src/lib/repositories` — it is never trusted to the `anon` key alone.
 
 Migrations are applied in filename order and are never edited after being applied. To change a schema, add a new migration in `database/migrations/` and a matching down-migration in `database/rollback/`. Keep schema, `src/lib/types/` typedefs, repository queries, and tests synchronized.
 
@@ -100,8 +100,8 @@ Every request read and write must satisfy one of them. Never add a query that tr
 These are not preferences. A change that breaks one is a defect.
 
 1. `TEXTBEE_API_KEY` and `SESSION_SECRET` are server-side only. Never place them under `public/`, inline them into a served page, return them in a response, log them, or commit them. Treat any discovered secret as an incident: stop, avoid printing it, remove only with developer approval, and tell the developer to rotate it.
-2. `.env` is gitignored. `.env.example` is tracked and holds placeholders only.
-3. All SQL uses `mysql2` placeholders. Never concatenate a value into a statement.
+2. `.env.local` is gitignored and untracked and is excluded from commit and push. No env-shaped file (`.env`, `.env.example`, `.env.local`, `*.env`) is ever committed. Real credentials live only in the local, untracked `.env.local`.
+3. Data access uses the `supabase-js` query builder. Never build or concatenate raw SQL strings; never issue an unparameterized statement.
 4. Logs carry ids, statuses, and correlation ids. Never a full name, address, contact number, document body, or one-time passcode.
 5. Resident uploads are written outside the served asset tree and are never committed.
 6. Rate-limit every public unauthenticated endpoint, especially one-time-passcode verification and public control-number tracking.
@@ -134,7 +134,9 @@ Never downgrade a `critical` finding to a `warning` to let a transition succeed,
 
 TextBee turns an Android phone into an SMS gateway. Two properties of that gateway shape the whole notification design.
 
-**Throughput.** One registered phone sustains roughly 10–15 messages per minute. Therefore a state change must never call the gateway inline. The state change and its `sms_outbox` row are written in the **same** MySQL transaction, and `src/lib/sms/outbox-worker.js` drains the queue under a throttle.
+**Throughput.** One registered phone sustains roughly 10–15 messages per minute. Therefore a state change must never call the gateway inline. The state change and its `sms_outbox` row are written in the **same** PostgreSQL transaction, and `src/lib/sms/outbox-worker.js` drains the queue under a throttle.
+
+Because `supabase-js` cannot span several PostgREST calls in one transaction, an atomic state change plus outbox enqueue is a Postgres function invoked through `.rpc()`. Nothing may stretch that atomic write across two `supabase-js` calls.
 
 **Signed receipts.** Delivery callbacks are HMAC-SHA256 signed over the raw request body, in the `X-Signature` header, and carry an `idempotencyKey`. `src/lib/sms/signature.js` verifies over the exact raw bytes before a payload may change state, then de-duplicates on `idempotencyKey`.
 

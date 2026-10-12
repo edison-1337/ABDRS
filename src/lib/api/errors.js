@@ -9,12 +9,12 @@
  * echoed ONLY when it originates in this repository's own source -- that is,
  * from an `ApiError` constructed here, or from a `DomainError` built from our
  * own domain data. Every other value, including one that merely LOOKS like it
- * came from here (a plain `Error`, a string, a MySQL driver error, a TextBee
- * error body), collapses to a fixed generic body.
+ * came from here (a plain `Error`, a string, a Postgres/Supabase driver error,
+ * a TextBee error body), collapses to a fixed generic body.
  *
- * The failure this prevents: a resident sees "ER_DUP_ENTRY: Duplicate entry
- * 'BRGY-2026-000041' for key 'requests.control_number'", which discloses the
- * schema, the row, and the fact that a control number exists.
+ * The failure this prevents: a resident sees "23505: duplicate key value
+ * violates unique constraint \"requests_control_number_key\"", which discloses
+ * the schema, the row, and the fact that a control number exists.
  */
 
 /** The one generic body. Never interpolate anything into it. */
@@ -65,26 +65,32 @@ export class DomainError extends Error {
 }
 
 /**
- * MySQL SQLSTATE -> HTTP.
+ * PostgreSQL SQLSTATE -> HTTP.
  *
- * 23000/23001 (integrity constraint) and 23xxx generally are DATA-INTEGRITY
- * defects on our side, not caller errors, so they map to 500 with a generic
- * body. A duplicate control number or a missing foreign key means a bug, and
- * saying so to the caller would only invite a confusing retry.
+ * SQLSTATE is the five-character status code Postgres attaches to failures. It
+ * reaches this repository two ways: the `code` of a `pg` error, and the `code`
+ * of a `supabase-js` `{ data, error }` value (PostgREST forwards it).
  *
- * 40001 (serialization_failure) and 40P01-equivalent lock wait timeouts are
- * genuinely retryable, so they map to 503 rather than an opaque 500 that would
- * cause a client retry storm.
+ * The 23xxx classes (integrity constraint) are DATA-INTEGRITY defects on our
+ * side, not caller errors, so they map to 409/500 with a generic body. A
+ * duplicate control number or a missing foreign key means a bug, and saying so
+ * to the caller would only invite a confusing retry.
+ *
+ * 40001 (serialization_failure), 40P01 (deadlock_detected), 55P03
+ * (lock_not_available) and 08006 (connection failure) are genuinely retryable,
+ * so they map to 503 rather than an opaque 500 that would cause a client retry
+ * storm.
  */
-const MYSQL_ERRNO_TO_HTTP = {
-  ER_DUP_ENTRY: { status: 409, code: 'duplicate', message: 'That record already exists.' },
-  ER_NO_REFERENCED_ROW: { status: 500, code: 'integrity_violation', message: INTERNAL_ERROR_MESSAGE },
-  ER_ROW_IS_REFERENCED: { status: 409, code: 'still_referenced', message: 'That record is still in use.' },
-  ER_BAD_NULL_ERROR: { status: 500, code: 'integrity_violation', message: INTERNAL_ERROR_MESSAGE },
-  ER_DATA_TOO_LONG: { status: 400, code: 'invalid_parameter_value', message: 'One of the values submitted is too long.' },
-  ER_LOCK_WAIT_TIMEOUT: { status: 503, code: 'busy', message: 'The system is busy. Please retry in a moment.' },
-  ER_LOCK_DEADLOCK: { status: 503, code: 'busy', message: 'The system is busy. Please retry in a moment.' },
-  PROTOCOL_CONNECTION_LOST: { status: 503, code: 'busy', message: 'The system is busy. Please retry in a moment.' },
+const PG_SQLSTATE_TO_HTTP = {
+  '23505': { status: 409, code: 'duplicate', message: 'That record already exists.' },
+  '23503': { status: 500, code: 'integrity_violation', message: INTERNAL_ERROR_MESSAGE },
+  '23502': { status: 500, code: 'integrity_violation', message: INTERNAL_ERROR_MESSAGE },
+  '42P01': { status: 500, code: 'integrity_violation', message: INTERNAL_ERROR_MESSAGE },
+  '22001': { status: 400, code: 'invalid_parameter_value', message: 'One of the values submitted is too long.' },
+  '40001': { status: 503, code: 'busy', message: 'The system is busy. Please retry in a moment.' },
+  '40P01': { status: 503, code: 'busy', message: 'The system is busy. Please retry in a moment.' },
+  '55P03': { status: 503, code: 'busy', message: 'The system is busy. Please retry in a moment.' },
+  '08006': { status: 503, code: 'busy', message: 'The system is busy. Please retry in a moment.' },
 };
 
 /**
@@ -101,19 +107,21 @@ export function buildErrorBody(status, code, message, extra) {
 }
 
 /**
- * Structural guard for a MySQL driver error. Matched on `errno`/`code` rather
- * than `instanceof` so the error is recognised regardless of which copy of the
- * driver produced it.
+ * Structural guard for a Postgres/Supabase driver error. Matched on the
+ * five-character SQLSTATE in `code` rather than `instanceof`, so the error is
+ * recognised whether it came from the `pg` driver or from a `supabase-js`
+ * `{ error }` value.
  *
  * @param {unknown} error
- * @returns {error is {errno?: string, code?: string, message?: string}}
+ * @returns {error is {code?: string, message?: string}}
  */
-export function isMysqlError(error) {
+export function isPostgresError(error) {
   if (typeof error !== 'object' || error === null) return false;
-  const candidate = /** @type {{errno?: unknown, code?: unknown, message?: unknown}} */ (error);
+  const candidate = /** @type {{code?: unknown, message?: unknown}} */ (error);
   return (
     typeof candidate.message === 'string' &&
-    (typeof candidate.errno === 'string' || typeof candidate.code === 'string')
+    typeof candidate.code === 'string' &&
+    /^[0-9A-Z]{5}$/.test(candidate.code)
   );
 }
 
@@ -135,7 +143,7 @@ function requestId() {
  *   ApiError          -> its own status/code/message (constructed here)
  *   SyntaxError       -> 400 invalid_json
  *   DomainError       -> 422 with its findings, shape preserved exactly
- *   mysql error       -> the table above
+ *   postgres error    -> the table above
  *   anything else     -> 500 internal_error + a request_id, generic body
  *
  * Never logs a request body, a session token, a gateway key, a message body, a
@@ -167,9 +175,9 @@ export function toErrorResponse(error, context) {
     };
   }
 
-  if (isMysqlError(error)) {
-    const driverCode = /** @type {any} */ (error).errno ?? /** @type {any} */ (error).code;
-    const mapped = MYSQL_ERRNO_TO_HTTP[driverCode];
+  if (isPostgresError(error)) {
+    const driverCode = error.code;
+    const mapped = PG_SQLSTATE_TO_HTTP[driverCode];
     if (mapped) {
       console.error(`[${context.operation}] failed`, {
         operation: context.operation,

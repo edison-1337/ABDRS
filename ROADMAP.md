@@ -12,7 +12,7 @@ The skeleton is in place. This phase makes it runnable.
 
 - [x] Folder architecture, `README.md`, `AGENTS.md`, canonical `SKILL.md`, architecture diagrams
 - [ ] `npm install`
-- [ ] `.env` from `.env.example`, with `SMS_PROVIDER=mock`
+- [ ] `.env.local` filled in (real values, gitignored), with `SMS_PROVIDER=mock`
 - [ ] ESLint flat config
 - [ ] `src/server.js` with the middleware chain and a health route
 - [ ] `GET /api/health`
@@ -31,13 +31,14 @@ The skeleton is in place. This phase makes it runnable.
 - [ ] `006_indexes_views.sql`
 - [ ] `007_seed_data.sql` — document types, requirements, staff roles
 - [ ] Matching down-migrations in `database/rollback/`
-- [ ] `src/lib/db/pool.js`, `transactions.js`, `migrate.js`, `seed.js`
+- [ ] `src/lib/db/client.js` (supabase-js), `migrate.js` (`pg` over `DATABASE_URL`), `seed.js`
 
 **Invariants to encode in the schema, not in code:**
 
 - `requests.control_number` is `UNIQUE` and has no update path
 - `UNIQUE (request_id, event)` on the outbox enforces one SMS per request per event
 - `CHECK` on `requests.status` restricts it to the six legal values
+- Each state change and its outbox enqueue run inside one Postgres function invoked via `.rpc()` — never two `supabase-js` calls
 
 **Exit:** `npm run migrate` then `npm run seed` on an empty database, twice in a row with no error.
 
@@ -75,7 +76,7 @@ Pure logic first. No HTTP, no database.
 
 ## Phase 4 — Document requests end to end
 
-- [ ] `src/lib/repositories/*.repo.js` — parameterized SQL only
+- [ ] `src/lib/repositories/*.repo.js` — `supabase-js` query builder only
 - [ ] `src/routes/documents.routes.js`, `requests.routes.js`
 - [ ] Submission assigns a control number and returns it
 - [ ] Upload handling with Multer, stored outside the served tree
@@ -128,9 +129,9 @@ Pure logic first. No HTTP, no database.
 ## Phase 8 — Delivery
 
 - [ ] Seed a realistic barangay profile
-- [ ] Document the production deployment: Node process, worker process, MySQL, `.env`
+- [ ] Document the production deployment: Node process, worker process, Supabase, `.env.local`
 - [ ] Register the TextBee webhook URL and set `TEXTBEE_WEBHOOK_SECRET`
-- [ ] Backup and restore procedure for MySQL
+- [ ] Backup and restore procedure for Supabase
 - [ ] Resident-facing instructions page
 
 ---
@@ -139,5 +140,5 @@ Pure logic first. No HTTP, no database.
 
 - Multi-site or multi-branch tenancy. This is a single barangay deployment.
 - A frontend framework, bundler, or TypeScript migration.
-- An ORM. Repositories use `mysql2` placeholders directly.
+- An ORM. Repositories use the `supabase-js` query builder directly; `pg` exists only as the DDL runner for migrations.
 - Payments, e-signature, and online document preview.

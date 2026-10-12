@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/HTML-E34F26" alt="HTML" />
   <img src="https://img.shields.io/badge/CSS-1572B6" alt="CSS" />
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E" alt="JavaScript" />
-  <img src="https://img.shields.io/badge/MySQL-4479A1" alt="MySQL" />
+  <img src="https://img.shields.io/badge/Supabase_PostgreSQL-3ECF8E" alt="Supabase PostgreSQL" />
   <img src="https://img.shields.io/badge/TextBee_SMS_API-5B21B6" alt="TextBee SMS API" />
   <img src="https://img.shields.io/badge/node:test-6E9F18" alt="node:test" />
 </p>
@@ -21,7 +21,7 @@
 
 Barangay Document Request System is a web application for a single barangay that lets residents request official documents online, lets barangay staff review and act on those requests, and keeps both parties informed automatically by SMS through the TextBee API.
 
-It is built as a plain HTML, CSS, and JavaScript frontend in front of a Node.js and Express server, with MySQL as the system of record and a provider-swappable SMS adapter as the notification boundary.
+It is built as a plain HTML, CSS, and JavaScript frontend in front of a Node.js and Express server, with Supabase PostgreSQL as the system of record and a provider-swappable SMS adapter as the notification boundary.
 
 ## What it does
 
@@ -41,7 +41,7 @@ It is built as a plain HTML, CSS, and JavaScript frontend in front of a Node.js 
 | --- | --- |
 | Frontend | HTML5 · CSS3 · Vanilla JavaScript (ES modules) |
 | Server | Node.js 20 · Express 5 |
-| Database | MySQL 8 with ordered SQL migrations |
+| Database | Supabase PostgreSQL with ordered SQL migrations |
 | SMS | TextBee SMS API (`x-api-key`, `/gateway/send-sms`, signed webhooks) |
 | Auth | bcrypt password hashing · server-side sessions · SMS one-time passcodes |
 | File uploads | Multer, stored outside the versioned tree |
@@ -97,7 +97,7 @@ src/
     ├── api/                         errors.js · respond.js · rate-limit.js · validate.js
     ├── auth/                        password.js · session.js · otp.js · roles.js
     ├── db/                          pool.js · transactions.js · migrate.js · seed.js
-    ├── repositories/                Parameterized SQL, one module per table group
+    ├── repositories/                Supabase-js queries, one module per table group
     ├── types/                       JSDoc typedefs for domain and SMS contracts
     └── utils/                       date-utils.js · phone.js · reference.js · id.js
 
@@ -151,15 +151,15 @@ Two TextBee constraints shape the notification design:
 - **Throughput.** One phone sustains roughly 10–15 messages per minute. Sending synchronously inside a request transaction would fail whenever the gateway is busy.
 - **Signed receipts.** Delivery callbacks are HMAC-SHA256 signed and carry an `idempotencyKey`.
 
-So the design is: a state change and an outbox row are written in **one** MySQL transaction, and a background worker drains the queue under a throttle. Route handlers never call TextBee inline.
+So the design is: a state change and an outbox row are written in **one** PostgreSQL transaction, and a background worker drains the queue under a throttle. Because `supabase-js` cannot span several PostgREST calls in a transaction, the state change plus its outbox enqueue run inside a Postgres function invoked via `.rpc()`. Route handlers never call TextBee inline.
 
 ## Security & privacy
 
 - **Secrets never reach the browser.** `TEXTBEE_API_KEY` and `SESSION_SECRET` are server-side only. `public/` contains no credential and no server code.
-- **One template, no secrets.** `.env` is gitignored; `.env.example` ships placeholders only.
+- **One local env file, no secrets in git.** `.env.local` is gitignored, untracked, and excluded from commit and push; real credentials live only there. No env-shaped file is committed.
 - **Resident data stays scoped.** Every read and write of a request is checked against the authenticated resident's own id. Staff authorization is checked separately.
 - **Webhooks are verified.** Inbound receipts are validated against the raw request body before they are allowed to change a message status, then de-duplicated on `idempotencyKey`.
-- **Parameterized SQL only.** All queries use `mysql2` placeholders. No value is ever concatenated into a statement.
+- **Query builder only.** All data access uses the `supabase-js` query builder. No raw SQL is built or concatenated; no unparameterized statement is ever issued.
 - **PII stays out of logs.** Log lines carry ids, statuses, and request ids — never a full name, address, contact number, or document body.
 - **Uploaded files are personal data.** Resident uploads land outside the served asset tree and are never committed.
 
@@ -169,7 +169,7 @@ So the design is: a state change and an outbox row are written in **one** MySQL 
 
 - Node.js 20.11 or newer
 - npm
-- A MySQL 8 database and a user that can create tables
+- A Supabase project (Postgres database), with its URL and keys in the local, gitignored `.env.local`
 - A TextBee account with a registered device, to send real SMS
 
 ### Install and run
@@ -178,7 +178,7 @@ So the design is: a state change and an outbox row are written in **one** MySQL 
 npm install
 ```
 
-Copy the environment template and fill in the database and session values. For local development leave `SMS_PROVIDER=mock` so nothing is sent and no gateway credential is required.
+Fill in `.env.local` with the Supabase URL, keys, and `DATABASE_URL`. It is gitignored and untracked, so it holds real values and is never committed. For local development leave `SMS_PROVIDER=mock` so nothing is sent and no gateway credential is required.
 
 ```bash
 npm run migrate

@@ -7,6 +7,13 @@ import { ConfigError, REPO_ROOT, parseConfig } from './index.js';
 
 const LONG_SECRET = 'a'.repeat(48);
 
+const PROD_ENV = {
+  NODE_ENV: 'production',
+  SESSION_SECRET: LONG_SECRET,
+  SUPABASE_URL: 'https://proj.supabase.co',
+  SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_test',
+};
+
 test('defaults describe a local mock development server', () => {
   const config = parseConfig({});
   assert.equal(config.nodeEnv, 'development');
@@ -17,12 +24,17 @@ test('defaults describe a local mock development server', () => {
   assert.equal(config.sms.provider, 'mock');
   assert.equal(config.sms.textbeeApiKey, '');
   assert.equal(config.sms.fromLabel, 'Barangay Office');
+  assert.equal(config.supabase.url, '');
+  assert.equal(config.supabase.anonKey, '');
+  assert.equal(config.supabase.serviceRoleKey, '');
+  assert.equal(config.databaseUrl, '');
 });
 
-test('the result and its sms section are frozen', () => {
+test('the result and its nested sections are frozen', () => {
   const config = parseConfig({});
   assert.equal(Object.isFrozen(config), true);
   assert.equal(Object.isFrozen(config.sms), true);
+  assert.equal(Object.isFrozen(config.supabase), true);
 });
 
 test('PORT is coerced from its string form', () => {
@@ -61,7 +73,7 @@ test('production refuses a short SESSION_SECRET', () => {
 });
 
 test('production accepts a long SESSION_SECRET and keeps it verbatim', () => {
-  const config = parseConfig({ NODE_ENV: 'production', SESSION_SECRET: LONG_SECRET });
+  const config = parseConfig(PROD_ENV);
   assert.equal(config.sessionSecret, LONG_SECRET);
   assert.equal(config.sessionSecretIsEphemeral, false);
 });
@@ -101,6 +113,45 @@ test('the textbee provider accepts a key and normalizes the provider name', () =
 
 test('SMS_FROM_LABEL overrides the default sender label', () => {
   assert.equal(parseConfig({ SMS_FROM_LABEL: 'Brgy Mabini' }).sms.fromLabel, 'Brgy Mabini');
+});
+
+test('SUPABASE_URL is parsed and kept verbatim', () => {
+  const config = parseConfig({ SUPABASE_URL: 'https://abc123.supabase.co' });
+  assert.equal(config.supabase.url, 'https://abc123.supabase.co');
+});
+
+test('an invalid SUPABASE_URL is refused', () => {
+  assert.throws(() => parseConfig({ SUPABASE_URL: '/relative' }), ConfigError);
+  assert.throws(() => parseConfig({ SUPABASE_URL: 'ftp://example.test' }), ConfigError);
+});
+
+test('production refuses to start without SUPABASE_URL', () => {
+  assert.throws(() => parseConfig({ NODE_ENV: 'production', SESSION_SECRET: LONG_SECRET }), ConfigError);
+});
+
+test('production refuses to start without SUPABASE_SERVICE_ROLE_KEY', () => {
+  assert.throws(
+    () => parseConfig({ NODE_ENV: 'production', SESSION_SECRET: LONG_SECRET, SUPABASE_URL: 'https://proj.supabase.co' }),
+    ConfigError,
+  );
+});
+
+test('production keeps the supabase keys verbatim', () => {
+  const config = parseConfig(PROD_ENV);
+  assert.equal(config.supabase.url, 'https://proj.supabase.co');
+  assert.equal(config.supabase.serviceRoleKey, 'sb_secret_test');
+  assert.equal(config.supabase.anonKey, '');
+});
+
+test('DATABASE_URL is parsed and kept verbatim', () => {
+  const config = parseConfig({ DATABASE_URL: 'postgresql://user:pass@db.supabase.co:5432/postgres' });
+  assert.equal(config.databaseUrl, 'postgresql://user:pass@db.supabase.co:5432/postgres');
+});
+
+test('an invalid DATABASE_URL is refused', () => {
+  assert.throws(() => parseConfig({ DATABASE_URL: 'not a url' }), ConfigError);
+  assert.throws(() => parseConfig({ DATABASE_URL: 'mysql://localhost/abdrs' }), ConfigError);
+  assert.throws(() => parseConfig({ DATABASE_URL: 'https://example.test' }), ConfigError);
 });
 
 test('REPO_ROOT points at the directory that holds package.json', () => {
