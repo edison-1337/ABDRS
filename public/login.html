@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in · Barangay Document Request System</title>
+    <meta name="description" content="Sign in to file and manage your barangay document requests, or to act on requests as barangay staff." />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Crect%20width='24'%20height='24'%20rx='5'%20fill='%230d6efd'/%3E%3Cpath%20d='M8%205h6l3%203v10H8z'%20fill='none'%20stroke='%23fff'%20stroke-width='1.6'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="css/base/tokens.css" />
+    <link rel="stylesheet" href="css/base/base.css" />
+    <link rel="stylesheet" href="css/components/button.css" />
+    <link rel="stylesheet" href="css/components/field.css" />
+    <link rel="stylesheet" href="css/components/card.css" />
+    <link rel="stylesheet" href="css/components/badge.css" />
+    <link rel="stylesheet" href="css/components/alert.css" />
+    <link rel="stylesheet" href="css/components/timeline.css" />
+    <link rel="stylesheet" href="css/components/steps.css" />
+    <link rel="stylesheet" href="css/components/empty-state.css" />
+    <link rel="stylesheet" href="css/layouts/public.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="container container--lg site-header__inner">
+        <a class="brand" href="index.html">
+          <span class="brand__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
+              <path d="M14 3v4h4" />
+              <path d="m9.5 14 1.75 1.75L15 12" />
+            </svg>
+          </span>
+          <span>
+            <span class="brand__name">Barangay Office</span>
+            <span class="brand__sub">Document Request System</span>
+          </span>
+        </a>
+
+        <nav class="site-nav" aria-label="Primary">
+          <ul class="site-nav__list">
+            <li><a class="site-nav__link" href="index.html#documents">Documents</a></li>
+            <li><a class="site-nav__link" href="index.html#how-it-works">How it works</a></li>
+            <li><a class="site-nav__link" href="track.html">Track a request</a></li>
+          </ul>
+        </nav>
+
+        <div class="site-header__actions">
+          <a class="btn btn--ghost" href="login.html" aria-current="page">Sign in</a>
+          <a class="btn btn--primary" href="request.html">Request a document</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+      <div class="auth-shell">
+        <div class="container">
+          <div class="auth-card">
+            <div class="card">
+              <div class="card__header">
+                <h1 class="card__title">Sign in</h1>
+                <p class="card__subtitle">Residents and barangay staff use the same sign-in.</p>
+              </div>
+              <div class="card__body">
+                <form method="get" action="my-requests.html">
+                  <div class="field">
+                    <label class="field__label" for="email">
+                      Email or mobile number
+                      <span class="field__required" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                      class="input"
+                      id="email"
+                      name="identifier"
+                      type="text"
+                      autocomplete="username"
+                      autocapitalize="none"
+                      spellcheck="false"
+                      required
+                    />
+                  </div>
+
+                  <div class="field">
+                    <label class="field__label" for="password">
+                      Password
+                      <span class="field__required" aria-hidden="true">*</span>
+                    </label>
+                    <input class="input" id="password" name="password" type="password" autocomplete="current-password" required />
+                  </div>
+
+                  <div class="section__actions">
+                    <button class="btn btn--primary btn--block" type="submit">Sign in</button>
+                  </div>
+                </form>
+
+                <p class="field__hint mt-4">
+                  <a href="register.html">Forgot your password?</a>
+                </p>
+              </div>
+              <div class="card__footer">
+                <p class="text-secondary">
+                  New here? <a href="register.html">Create an account</a>.
+                </p>
+              </div>
+            </div>
+
+            <div class="alert alert--info mt-5" role="note">
+              <svg class="alert__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 8h.01M11 12h1v4h1" />
+              </svg>
+              <div class="alert__body">
+                <p class="alert__title">Preview interface</p>
+                <p>Sign-in is not connected yet. Staff accounts are created by the barangay administrator.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container container--lg">
+        <div class="site-footer__grid">
+          <div class="stack-sm">
+            <a class="brand" href="index.html">
+              <span class="brand__mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
+                  <path d="M14 3v4h4" />
+                  <path d="m9.5 14 1.75 1.75L15 12" />
+                </svg>
+              </span>
+              <span>
+                <span class="brand__name">Barangay Office</span>
+                <span class="brand__sub">Document Request System</span>
+              </span>
+            </a>
+            <p class="site-footer__brand">
+              Request barangay documents online, track them with a control number, and get SMS updates at each step.
+            </p>
+          </div>
+
+          <div>
+            <h2 class="site-footer__heading">Residents</h2>
+            <ul class="site-footer__links">
+              <li><a href="request.html">Request a document</a></li>
+              <li><a href="track.html">Track a request</a></li>
+              <li><a href="my-requests.html">My requests</a></li>
+              <li><a href="register.html">Create an account</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h2 class="site-footer__heading">Barangay staff</h2>
+            <ul class="site-footer__links">
+              <li><a href="login.html">Sign in</a></li>
+              <li><a href="index.html#statuses">Request statuses</a></li>
+              <li><a href="index.html#faq">Questions</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <p class="site-footer__note">
+          Preview interface. Pages and forms are not yet connected to the barangay system, so nothing is submitted or
+          stored.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

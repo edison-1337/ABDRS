@@ -1,0 +1,68 @@
+/*
+ * Status and severity badge.
+ *
+ * Contract (DESIGN.md section 4): text plus pill. Colour supports the label,
+ * it never replaces it. Every badge carries a visible word.
+ */
+
+.badge {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  border-radius: var(--radius-pill);
+}
+
+.badge::before {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  content: "";
+  background-color: currentcolor;
+  border-radius: 50%;
+}
+
+/* -- Request lifecycle ---------------------------------------------------- */
+
+.badge--submitted,
+.badge--cancelled {
+  color: var(--status-submitted-text);
+  background-color: #e9ecef;
+}
+
+.badge--under-review {
+  color: var(--status-under-review-text);
+  background-color: rgba(13, 110, 253, 0.12);
+}
+
+.badge--approved,
+.badge--released {
+  color: var(--status-approved-text);
+  background-color: rgba(25, 135, 84, 0.14);
+}
+
+.badge--rejected {
+  color: var(--status-rejected-text);
+  background-color: rgba(220, 53, 69, 0.12);
+}
+
+/* -- Validation severity -------------------------------------------------- */
+
+.badge--critical {
+  color: var(--severity-critical-text);
+  background-color: rgba(220, 53, 69, 0.12);
+}
+
+.badge--warning {
+  color: var(--severity-warning-text);
+  background-color: rgba(253, 126, 20, 0.16);
+}
+
+.badge--suggestion {
+  color: var(--severity-suggestion-text);
+  background-color: #e9ecef;
+}

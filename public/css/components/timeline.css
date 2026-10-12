@@ -1,0 +1,75 @@
+/*
+ * Timeline / stepper.
+ *
+ * Used for the request lifecycle and for a request's status history. List
+ * semantics; each marker has a text label, never a bare colour.
+ */
+
+.timeline {
+  position: relative;
+}
+
+.timeline__item {
+  position: relative;
+  padding-left: var(--space-6);
+  padding-bottom: var(--space-5);
+}
+
+.timeline__item:last-child {
+  padding-bottom: 0;
+}
+
+/* The connecting rule, drawn from each marker down to the next. */
+.timeline__item::before {
+  position: absolute;
+  top: 1.5rem;
+  bottom: 0;
+  left: calc(var(--space-4) / 2 - 1px);
+  width: 2px;
+  content: "";
+  background-color: var(--color-border);
+}
+
+.timeline__item:last-child::before {
+  display: none;
+}
+
+.timeline__marker {
+  position: absolute;
+  top: 0.3rem;
+  left: 4px;
+  width: var(--space-4);
+  height: var(--space-4);
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-border-strong);
+  border-radius: 50%;
+}
+
+.timeline__item--done .timeline__marker {
+  background-color: var(--status-approved);
+  border-color: var(--status-approved);
+}
+
+.timeline__item--current .timeline__marker {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-tint-strong);
+}
+
+.timeline__title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  font-weight: 600;
+}
+
+.timeline__meta {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.timeline__text {
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+}

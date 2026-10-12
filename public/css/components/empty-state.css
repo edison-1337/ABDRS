@@ -1,0 +1,36 @@
+/*
+ * Empty state.
+ *
+ * Shown when a list or result has nothing to display. Copy invites the next
+ * action rather than apologising.
+ */
+
+.empty-state {
+  padding: var(--space-7) var(--space-4);
+  text-align: center;
+}
+
+.empty-state__icon {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.empty-state__title {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-lg);
+}
+
+.empty-state__text {
+  max-width: 48ch;
+  margin: 0 auto var(--space-5);
+  color: var(--color-text-secondary);
+}
+
+.empty-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+}

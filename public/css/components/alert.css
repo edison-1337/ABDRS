@@ -1,0 +1,81 @@
+/*
+ * Alert.
+ *
+ * Informational and severity messaging. Colour is a left rule plus a soft
+ * background; the message text always carries the meaning.
+ */
+
+.alert {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left-width: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.alert__icon {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.15rem;
+}
+
+.alert__title {
+  margin-bottom: var(--space-1);
+  font-weight: 600;
+}
+
+.alert__body {
+  color: var(--color-text-secondary);
+}
+
+.alert__body p + p {
+  margin-top: var(--space-2);
+}
+
+.alert__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+/* -- Variants ------------------------------------------------------------- */
+
+.alert--info {
+  background-color: rgba(13, 110, 253, 0.06);
+  border-left-color: var(--color-accent);
+}
+
+.alert--info .alert__icon {
+  color: var(--color-accent);
+}
+
+.alert--success {
+  background-color: rgba(25, 135, 84, 0.08);
+  border-left-color: var(--status-approved);
+}
+
+.alert--success .alert__icon {
+  color: var(--status-approved);
+}
+
+.alert--warning {
+  background-color: rgba(253, 126, 20, 0.1);
+  border-left-color: var(--severity-warning);
+}
+
+.alert--warning .alert__icon {
+  color: var(--severity-warning-text);
+}
+
+.alert--error {
+  background-color: rgba(220, 53, 69, 0.08);
+  border-left-color: var(--severity-critical);
+}
+
+.alert--error .alert__icon {
+  color: var(--severity-critical);
+}

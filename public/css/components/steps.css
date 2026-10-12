@@ -1,0 +1,56 @@
+/*
+ * Process steps.
+ *
+ * A numbered sequence, used on the landing page for "How it works". Numbered
+ * markers are correct here because the content is genuinely a sequence.
+ */
+
+.steps {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .steps {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.step {
+  height: 100%;
+  padding: var(--space-5);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.step__index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--status-under-review-text);
+  background-color: var(--color-accent-tint);
+  border-radius: 50%;
+}
+
+.step__title {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-md);
+}
+
+.step__text {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
